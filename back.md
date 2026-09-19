@@ -48,13 +48,13 @@ Es el paso previo al código SQL. Traduce los conceptos abstractos del DER a est
   * *Ejemplo:* 1 Ciudadano tiene 1 Pasaporte.
   * **Acción:** La PK de una de las tablas se envía a la otra como **FK**. Se suele colocar en la tabla con participación total/obligatoria.
 
-# 2. SQL Joins  
+# 4. SQL Joins  
 * **INNER JOIN:** Devuelve solo los registros que tienen coincidencias en ambas tablas.
 * **LEFT (OUTER) JOIN:** Devuelve todos los registros de la tabla izquierda, y las coincidencias de la tabla derecha. Si no hay coincidencia, devuelve NULL en el lado derecho.
 * **RIGHT (OUTER) JOIN:** El inverso del LEFT JOIN. Devuelve todos los de la derecha y las coincidencias de la izquierda.
 * **FULL (OUTER) JOIN:** Devuelve todos los registros cuando hay una coincidencia en cualquiera de las tablas.
 
-# 3. SQL avanzado  
+# 5. SQL avanzado  
 * **COUNT():** Cuenta filas.
 * **SUM():** Suma valores.
 * **AVG():** Calcula el promedio.
@@ -97,7 +97,7 @@ y se ejecuta con:
 EXEC GetCustomersByCity @City = 'Madrid';
 ```
 
-# 4. SQL vs PostgreSQL  
+# 6. SQL vs PostgreSQL  
 *   **Concatenación de Cadenas (Strings):**
     *   **SQL Server:** Usa el operador de suma `+` (ej. `'Hola ' + 'Mundo'`).
     *   **PostgreSQL:** Usa el operador pipe doble `||` (ej. `'Hola ' || 'Mundo'`).
@@ -133,3 +133,21 @@ EXEC GetCustomersByCity @City = 'Madrid';
 *   **Condicionales IF/ELSE en scripts:**
     *   **SQL Server:** Se pueden usar libremente en medio del código usando `IF ... BEGIN ... END`.
     *   **PostgreSQL:** Para usar lógica condicional procedimental, el código debe estar dentro de una función o de un bloque anónimo estructurado (ej. `DO $$ BEGIN ... END $$;`).
+
+# 7. Crear server node
+```js
+const express = require('express');
+const app = express();
+const port = 3000;
+
+// Ruta básica
+app.get('/', (req, res) => {
+  res.send('¡Hola desde mi servidor con Node.js y Express!');
+});
+
+// Iniciar servidor
+app.listen(port, () => {
+  console.log(`Servidor escuchando en http://localhost:${port}`);
+});
+
+```
