@@ -43,6 +43,28 @@ Es el paso previo al código SQL. Traduce los conceptos abstractos del DER a est
 * **Regla 3: Relaciones N a M (Muchos a Muchos)**
   * *Ejemplo:* N Estudiantes se anotan en M Cursos.
   * **Acción:** **SÍ se crea una tabla nueva** intermedia (ej. `Inscripciones`). Esta tabla heredará las PK de las dos entidades originales, que actuarán como **Claves Foráneas (FK)** y juntas formarán una PK compuesta.
+  * *Ejemplo visual de las 3 tablas generadas:*
+    ```mermaid
+    erDiagram
+        ESTUDIANTES ||--o{ INSCRIPCIONES : "tiene"
+        CURSOS ||--o{ INSCRIPCIONES : "tiene"
+
+        ESTUDIANTES {
+            int ID_Estudiante PK
+            string Nombre
+        }
+        
+        CURSOS {
+            int ID_Curso PK
+            string Nombre_Curso
+        }
+        
+        INSCRIPCIONES {
+            int ID_Estudiante PK, FK
+            int ID_Curso PK, FK
+            date Fecha
+        }
+    ```
 
 * **Regla 4: Relaciones 1 a 1 (Uno a Uno)**
   * *Ejemplo:* 1 Ciudadano tiene 1 Pasaporte.
@@ -100,6 +122,10 @@ EXEC GetCustomersByCity @City = 'Madrid';
 # 6. SQL vs PostgreSQL  
 *   **Concatenación de Cadenas (Strings):**
     *   **SQL Server:** Usa el operador de suma `+` (ej. `'Hola ' + 'Mundo'`).
+        ```sql
+        -- Ejemplo: Muestra 3 columnas (nombre, apellido y la unión de ambas)
+        SELECT nombre, apellido, nombre + ' ' + apellido AS nombre_completo FROM empleados;
+        ```
     *   **PostgreSQL:** Usa el operador pipe doble `||` (ej. `'Hola ' || 'Mundo'`).
 
 *   **Límite de Resultados:**
@@ -116,6 +142,10 @@ EXEC GetCustomersByCity @City = 'Madrid';
 
 *   **Manejo de Valores Nulos:**
     *   **SQL Server:** Suele usar la función `ISNULL(columna, 'valor_defecto')`.
+        ```sql
+        -- Ejemplo: Si el teléfono es NULL, muestra 'Sin teléfono'
+        SELECT nombre, ISNULL(telefono, 'Sin teléfono') AS telefono_contacto FROM empleados;
+        ```
     *   **PostgreSQL:** Usa la función estándar `COALESCE(columna, 'valor_defecto')`. *(COALESCE también funciona en SQL Server)*.
 
 *   **Claves Primarias Autoincrementales:**
@@ -133,6 +163,71 @@ EXEC GetCustomersByCity @City = 'Madrid';
 *   **Condicionales IF/ELSE en scripts:**
     *   **SQL Server:** Se pueden usar libremente en medio del código usando `IF ... BEGIN ... END`.
     *   **PostgreSQL:** Para usar lógica condicional procedimental, el código debe estar dentro de una función o de un bloque anónimo estructurado (ej. `DO $$ BEGIN ... END $$;`).
+
+### Ejemplo Práctico: Stored Procedure (SQL Server vs PostgreSQL)
+Aquí se aplican las diferencias de Declaración de Variables, Condicionales IF/ELSE y Casting de Tipos.
+
+**En SQL Server:**
+```sql
+CREATE PROCEDURE CalcularDescuento
+    @precio_original DECIMAL(10,2),
+    @porcentaje INT
+AS
+BEGIN
+    -- Declaración de Variables (Con @ y sueltas en el código)
+    DECLARE @precio_final DECIMAL(10,2);
+    DECLARE @mensaje VARCHAR(100);
+
+    SET @precio_final = @precio_original - (@precio_original * @porcentaje / 100.0);
+
+    -- Condicional IF/ELSE (Usa BEGIN ... END)
+    IF @precio_final < 0
+    BEGIN
+        SET @mensaje = 'Error: El precio final no puede ser negativo.';
+    END
+    ELSE
+    BEGIN
+        -- Casting (Convierte a texto para concatenar con el +)
+        SET @mensaje = 'Precio final: $' + CAST(@precio_final AS VARCHAR);
+    END
+
+    SELECT @mensaje AS Resultado;
+END;
+```
+
+**En PostgreSQL:**
+```sql
+CREATE OR REPLACE FUNCTION CalcularDescuento(
+    precio_original NUMERIC,
+    porcentaje INT
+) RETURNS TEXT AS $$
+-- Declaración de Variables (En bloque DECLARE, sin arrobas)
+DECLARE
+    precio_final NUMERIC;
+    mensaje TEXT;
+BEGIN
+    precio_final := precio_original - (precio_original * porcentaje / 100.0);
+
+    -- Condicional IF/ELSE (Usa THEN y termina con END IF;)
+    IF precio_final < 0 THEN
+        mensaje := 'Error: El precio final no puede ser negativo.';
+    ELSE
+        -- Casting (Atajo :: y concatena con ||)
+        mensaje := 'Precio final: $' || precio_final::VARCHAR;
+    END IF;
+
+    RETURN mensaje;
+END;
+$$ LANGUAGE plpgsql;
+```
+*(Nota sobre `$$`: En PostgreSQL, todo el cuerpo de la función es técnicamente un string. En lugar de encerrarlo todo entre comillas simples (lo cual obligaría a escapar las comillas internas), se usa el "Dollar Quoting" `$$` como un delimitador gigante e indestructible).*
+
+### Diferencias Estructurales (Más allá de la sintaxis)
+* **Datos NoSQL (JSON/Arrays):** PostgreSQL tiene tipos de datos nativos como `JSONB` (con índices hiper-rápidos) y Arrays. SQL Server guarda el JSON como texto (`NVARCHAR`).
+* **Extensiones:** PostgreSQL es extensible. Se le instalan plugins comunitarios como **PostGIS** (para mapas/geolocalización) o pgvector (para IA). SQL Server es un motor cerrado.
+* **Case-Sensitivity:** PostgreSQL distingue mayúsculas por defecto (`'Juan'` != `'juan'`). SQL Server es Case-Insensitive (le da igual).
+* **Bloqueos (MVCC):** PostgreSQL usa MVCC (los que leen no bloquean a los que escriben). SQL Server históricamente puede bloquear una tabla si alguien lanza un `SELECT` muy pesado.
+* **Licencia:** PostgreSQL es 100% Open Source y gratuito. SQL Server es comercial de Microsoft (muy costoso en sus versiones Enterprise).
 
 # 7. Crear server node
 ```js
